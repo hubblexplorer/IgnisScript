@@ -1,0 +1,6 @@
+/target
+.vscode
+*.asm
+out
+*.out
+*.o

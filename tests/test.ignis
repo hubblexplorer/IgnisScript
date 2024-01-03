@@ -1,0 +1,93 @@
+let counter : int = 0;
+
+while (counter < 5) {
+    println(counter);
+
+    let inner_counter : int = 0;
+
+    while (inner_counter < 3) {
+        println(inner_counter);
+        inner_counter = inner_counter + 1;
+    }
+
+    counter = counter + 1;
+}
+
+{
+    let temp : int = 0;
+    
+    if (temp == 0) {
+        println(true);
+    } 
+}
+
+{
+    let i : int = 0;
+
+    while (i < 3) {
+        println(i);
+        i = i + 1;
+    }
+}
+
+
+
+
+{
+    let val : int = 10;
+    let flag : bool = val > 5;
+    if (flag) {
+        println(true);
+    }
+}
+
+
+{
+    let condition1 : bool = true;
+    let condition2 : bool = false;
+    let condition3 : bool = true;
+
+    if (condition1 || condition2 && condition3) {
+        println(true);
+    } 
+}
+
+
+{
+    let k : int = 0;
+    let j : int = 5;
+
+    while (k < 3) {
+        println(k);
+        k = k + 1;
+    }
+
+    while (j > 0) {
+        println(j);
+        j = j - 1;
+    }
+}
+
+
+
+
+
+{
+    let str : char = 'A';
+    println(str);
+}
+
+
+{
+    let val : int = 10;
+    let flag : bool = val > 5;
+    if (flag) {
+        println(true);
+    }
+}
+
+
+
+
+
+exit(0);

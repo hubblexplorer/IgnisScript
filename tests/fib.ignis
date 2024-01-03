@@ -1,0 +1,12 @@
+let fib : int = 0;
+let a : int = 0;
+let b : int = 1;
+let n : int = 10;
+
+while (n > 0) {
+    println(a);
+    let next : int = a + b;
+    a = b;
+    b = next;
+    n = n - 1;
+}
