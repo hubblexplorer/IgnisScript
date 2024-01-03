@@ -159,18 +159,6 @@ pub enum NodeExpr {
 }
 
 impl NodeExpr {
-    pub fn same_type(&self, other: &NodeExpr) -> bool {
-        match self {
-            NodeExpr::NodeTerm(_, t1) => match other {
-                NodeExpr::NodeTerm(_, t2) => t1 == t2,
-                _ => false,
-            },
-            NodeExpr::BinaryExpr(_, t1) => match other {
-                NodeExpr::BinaryExpr(_, t2) => t1 == t2,
-                _ => false,
-            },
-        }
-    }
     pub fn get_type(&self) -> Type {
         match self {
             NodeExpr::NodeTerm(_, t) => t.clone(),
