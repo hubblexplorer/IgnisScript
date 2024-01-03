@@ -1,5 +1,4 @@
-$$
-\begin{align}
+$$\begin{align}
 [\text{Prog}] &\to [\text{Stmt}]^* \\\\
 [\text{Stmt}] &\to  
 \begin{cases}
@@ -61,9 +60,4 @@ $$
     \text{bool} \\
     \text{char}
 \end{cases} \\
-
-
-
-\end{align}
-
-$$
+\end{align}$$
