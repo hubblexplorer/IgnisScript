@@ -7,7 +7,9 @@ $$
     \text{print}([\text{Expr}]) \text{;} \\ 
     \text{println}([\text{Expr}]) \text{;} \\
     \text{let}\space\text{ident} : [\text{Type}] = [\text{Expr}] \text{;} \\
-    \text{if} ([\text{Expr}].\text{bool})[\text{Scope}] \\
+    \text{if} ([\text{Expr}].\text{bool})\space[\text{Scope}] \\
+    \text{else if} ([\text{Expr}].\text{bool})\space[\text{Scope}] \\
+    \text{else}\space [\text{Scope}] \\
     [\text{Scope}]\\
     \text{ident} = [\text{Expr}] \text{;}\space \in \space \text{ident}.\text{Type} = [\text{Expr}]  \\
     \text{while} ([\text{Expr}].\text{bool}) [\text{Scope}] \\
