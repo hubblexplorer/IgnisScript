@@ -4,3 +4,7 @@
 out
 *.out
 *.o
+Cargo.lock
+fib
+else
+test

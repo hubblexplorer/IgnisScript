@@ -12,7 +12,12 @@ fn main() {
         eprintln!("Error: Filename not provided: Usage \"IgnisScript <file>\"");
         exit(-1);
     }
+    
     let file = input.unwrap();
+
+    let name = file.split(".").collect::<Vec<&str>>()[0];
+
+    let name = name.split("/").last().unwrap();
 
     if fs::File::open(&file).is_err() {
         eprintln!("Error: File \"{}\" not found", file);
@@ -21,7 +26,7 @@ fn main() {
 
     let content = fs::read_to_string(&file).unwrap();
 
-    println!("{}", content);
+    //println!("{}", content);
 
     let mut tokens = tokenizer::Tokenizer::new(content);
 
@@ -30,7 +35,7 @@ fn main() {
     let tokens = tokens.get_tokens();
 
 
-    println!("{:?}", tokens);
+    //println!("{:?}", tokens);
 
     let mut parser = parser::Parser::new(tokens.clone());
 
@@ -41,12 +46,12 @@ fn main() {
         exit(-1);
     }
     let tree = tree.unwrap();
-    println!("{:?}", tree);
+    /*println!("{:?}", tree);*/
 
     let assembly = generation::Generator::new(tree).gen_prog();
 
 
-    println!("{}", assembly);
+    /*println!("{}", assembly);*/
 
     let mut file = fs::File::create("out.asm").unwrap();
 
@@ -57,10 +62,8 @@ fn main() {
     let mut child = Command::new("nasm").arg("-felf64").arg("out.asm").spawn().unwrap();
     println!("nasm -felf64 out.asm");
     let _ = child.wait();
-    let mut child= Command::new("ld").arg("-o").arg("out").arg("out.o").spawn().unwrap();
-    
-    println!("ld -o out out.o");
+    let mut child= Command::new("ld").arg("-o").arg(name).arg("out.o").spawn().unwrap();
+
+    println!("ld -o {} out.o",name);
     let _ = child.wait();
 }
-
-

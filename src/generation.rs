@@ -63,7 +63,7 @@ impl Generator {
                 let stack_loc = self.m_vars[&value].stack_loc;
 
                 if term_ident.negated{
-                    println!("Term: {:?}", term_ident);
+                  
                     if term_ident.type_ == Type::Int {
                         /*
                             mov rbx, 0
@@ -97,7 +97,7 @@ impl Generator {
                 self.get_expr(&term_paren.expr);
             }
             NodeTerm::TermBoolLit(term_bool_literal) => {
-                println!("Here: {:?}", term_bool_literal.bool_literal);
+  
                 let value = term_bool_literal.bool_literal._type.clone();
                 
                 if value == TokenType::True {
@@ -269,8 +269,7 @@ impl Generator {
     
     fn gen_scope(&mut self, scope: &NodeScope) {
         self.being_scope();
-        println!("Parsing scope: {:?}", scope);
-        println!("{}", self.m_scopes.len());
+
         for stmt in scope.stmts.iter() {
             self.get_stmt(stmt);
             
@@ -400,7 +399,7 @@ impl Generator {
                 {
                     self.get_expr(&stmt_print.expr);
                     self.pop("rdi");
-                    println!("here");
+
 
                     self.m_output.push_str("\tcall print_dec\n");
                 } 
@@ -421,10 +420,7 @@ impl Generator {
              
             }
             NodeStmt::NodeStmtPrintln(stmt_println) => {
-                println!(
-                    "{:?}",
-                    stmt_println.expr.get_type()
-                );
+               
                 if stmt_println.expr.get_type() == Type::Int
                    
                 {
@@ -463,7 +459,7 @@ impl Generator {
                 self.get_expr(&stmt_assign.expr);
                 self.pop("rax");
               
-                println!("Stack loc: {}", self.m_vars[&value].stack_loc);
+                
 
                 self.m_output.push_str(format!("\tmov QWORD [rsp+{}], rax\n", (self.m_vars.len() - self.m_vars[&value].stack_loc -1)  * 8).as_str());
             }
