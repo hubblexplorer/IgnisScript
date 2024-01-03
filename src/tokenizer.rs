@@ -32,6 +32,7 @@ pub enum TokenType {
     GreaterThan,
     Exclamation,
     While,
+    Else,
 }
 
 pub fn bin_precedence(token_type: &TokenType) -> Option<i32> {
@@ -49,16 +50,6 @@ pub fn bin_precedence(token_type: &TokenType) -> Option<i32> {
         _ => None,
     }
 }
-
-pub fn is_unitary(token_type: &TokenType) -> bool {
-    match token_type {
-        TokenType::Minus => true,
-        TokenType::Exclamation => true,
-        _ => false,
-    }
-}
-
-
 
 
 
@@ -177,7 +168,16 @@ impl Tokenizer {
                     });
                     buffer.clear();
                     continue;
-                } else if c != '_' {
+                } 
+                else if buffer == "else" {
+                    self.tokens.push(Token {
+                        _type: TokenType::Else,
+                        value: None,
+                    });
+                    buffer.clear();
+                    continue;
+                }
+                else if c != '_' {
                     self.tokens.push(Token {
                         _type: TokenType::Ident,
                         value: Some(buffer.clone()),

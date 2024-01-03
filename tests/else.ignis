@@ -1,0 +1,9 @@
+if (false){
+    println('A');
+}
+else if (true){
+    println('B');
+}
+else {
+    println('C');
+}

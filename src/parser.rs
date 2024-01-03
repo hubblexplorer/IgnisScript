@@ -2,7 +2,7 @@ use std::process::exit;
 
 use crate::{
     tokenizer::Token,
-    tokenizer::{bin_precedence, is_unitary, TokenType},
+    tokenizer::{bin_precedence, TokenType},
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -115,12 +115,6 @@ pub struct NodeUniNeg {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum NodeUnitExpr {
-    UnitNeg(NodeUniNeg),
-    UnitNot(NodeUniNot),
-}
-
-#[derive(Debug, Clone, PartialEq)]
 pub struct NodeBinaryDiv {
     pub left: NodeExpr,
     pub right: NodeExpr,
@@ -208,6 +202,17 @@ pub struct NodeStmtIf {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct NodeStmtElseIf {
+    pub expr: NodeExpr,
+    pub scope: Box<NodeScope>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct NodeStmtElse {
+    pub scope: Box<NodeScope>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct NodeStmtAssign {
     pub ident: Token,
     pub expr: NodeExpr,
@@ -225,6 +230,8 @@ pub enum NodeStmt {
     NodeStmtLet(NodeStmtLet),
     NodeStmtScope(Box<NodeScope>),
     NodeStmtIf(NodeStmtIf),
+    NodeStmtElseIf(NodeStmtElseIf),
+    NodeStmtElse(NodeStmtElse),
     NodeStmtPrint(NodeStmtPrint),
     NodeStmtPrintln(NodeStmtPrintln),
     NodeStmtAssign(NodeStmtAssign),
@@ -251,6 +258,7 @@ pub struct Parser {
     pub tokens: Vec<Token>,
     pub index: usize,
     pub variables_types: Vec<(Token, Type)>,
+    pub prog: NodeProg,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -266,6 +274,7 @@ impl Parser {
             tokens,
             index: 0,
             variables_types: vec![],
+            prog: NodeProg { stmts: vec![] },
         }
     }
 
@@ -277,8 +286,7 @@ impl Parser {
                 || negate.clone().unwrap()._type == TokenType::Exclamation)
         {
             self.consume(1);
-        }
-        else{
+        } else {
             negate = None;
         }
 
@@ -329,8 +337,7 @@ impl Parser {
                                 type_: self.variables_types[i].1.clone(),
                                 negated: false,
                             }));
-                        }
-                        else{
+                        } else {
                             if self.variables_types[i].1 == Type::Int {
                                 if negate.unwrap()._type == TokenType::Minus {
                                     return Some(NodeTerm::TermIdent(NodeExprIdent {
@@ -338,37 +345,34 @@ impl Parser {
                                         type_: Type::Int,
                                         negated: true,
                                     }));
-                                    
-                                }
-                                else {
+                                } else {
                                     eprintln!("Expected -");
                                     exit(-1);
                                 }
-                            }
-                            else if self.variables_types[i].1 == Type::Bool {
-                                if negate.unwrap()._type == TokenType::Exclamation{
+                            } else if self.variables_types[i].1 == Type::Bool {
+                                if negate.unwrap()._type == TokenType::Exclamation {
                                     return Some(NodeTerm::TermIdent(NodeExprIdent {
                                         ident,
                                         type_: Type::Bool,
                                         negated: true,
                                     }));
-                                }
-                                else {
+                                } else {
                                     eprintln!("Expected !");
                                     exit(-1);
                                 }
-                            }
-                            else {
+                            } else {
                                 eprintln!("Expected - or !");
                                 exit(-1);
                             }
-                           
                         }
                     }
-
                 }
 
-                Some(NodeTerm::TermIdent(NodeExprIdent { ident, type_, negated: false }))
+                Some(NodeTerm::TermIdent(NodeExprIdent {
+                    ident,
+                    type_,
+                    negated: false,
+                }))
             } else if t._type == TokenType::OpenParent {
                 self.consume(1);
 
@@ -611,7 +615,11 @@ impl Parser {
                                     }
                                 }
                             } else {
-                                eprintln!("Error: Type mismatch {:?} and {:?}", expr_left.get_type(), expr_right.get_type());
+                                eprintln!(
+                                    "Error: Type mismatch {:?} and {:?}",
+                                    expr_left.get_type(),
+                                    expr_right.get_type()
+                                );
                                 exit(-1);
                             }
                         } else {
@@ -635,14 +643,13 @@ impl Parser {
     fn parse_scope(&mut self, type_: Type) -> Option<NodeScope> {
         if let Some(t) = self.peek(0) {
             if t._type == TokenType::OpenCurly {
-                
                 self.consume(1);
                 let mut stmts = Vec::new();
-               
+
                 while let Some(stmt) = self.parse_stmt(type_.clone()) {
                     stmts.push(stmt);
                 }
-                
+
                 if let Some(t) = self.peek(0) {
                     if t._type == TokenType::CloseCurly {
                         self.consume(1);
@@ -662,13 +669,10 @@ impl Parser {
 
     pub fn parse_stmt(&mut self, type_: Type) -> Option<NodeStmt> {
         let mut node = None;
-        
-        if let Some(t) = self.peek(0) {
 
+        if let Some(t) = self.peek(0) {
             if t._type == TokenType::OpenCurly {
-              
                 if let Some(scope) = self.parse_scope(type_.clone()) {
-                    
                     return Some(NodeStmt::NodeStmtScope(Box::new(scope)));
                 }
             }
@@ -686,13 +690,12 @@ impl Parser {
                             if let Some(t_3) = self.peek(0) {
                                 if t_3._type == TokenType::CloseParent {
                                     self.consume(1);
-                                    
-
                                     if let Some(scope) = self.parse_scope(type_.clone()) {
                                         node = Some(NodeStmt::NodeStmtIf(NodeStmtIf {
                                             expr: node_expr,
                                             scope: Box::new(scope),
                                         }));
+                                        return node;
                                     } else {
                                         eprintln!("Error: Expected scope");
                                         exit(-1);
@@ -710,6 +713,73 @@ impl Parser {
                         eprintln!("Error: Expected '('");
                         exit(-1);
                     }
+                }
+            }
+            if t._type == TokenType::Else {
+                self.consume(1);
+                //Get if the last node was an if, if not then error
+                if  self.prog.stmts.len()  == 0  {
+                    eprintln!("Error: Expected 'if'");
+                        exit(-1);
+                }
+                let last_tokens = &self.prog.stmts[self.prog.stmts.len() - 1];
+                match last_tokens {
+                    NodeStmt::NodeStmtIf(_) => {}
+                    NodeStmt::NodeStmtElseIf(_) => {}
+                    _ => {
+
+                        eprintln!("Error: Expected 'if'");
+                        exit(-1);
+                    }
+                }
+                //test is passed check if it is an else if
+                if let Some(t_2) = self.peek(0) {
+                    if t_2._type == TokenType::If {
+                        if let Some(mut node_expr) = self.parse_stmt(type_.clone()) {
+                            match node_expr {
+                                NodeStmt::NodeStmtIf(node_if) => {
+                                    node_expr = NodeStmt::NodeStmtElseIf(NodeStmtElseIf {
+                                        expr: node_if.expr,
+                                        scope: Box::new(*node_if.scope),
+                                    });
+                                    return Some(node_expr);
+                                    
+                                }
+                                _ => {
+                                    eprintln!("Error: Expected 'if'");
+                                    exit(-1);
+                                }
+                            }
+                           
+                        } else {
+                            eprintln!("Error: Expected 'if'");
+                            exit(-1);
+                        }
+                    }
+                }
+                //test is passed check if it is an else
+                if let Some(t_2) = self.peek(0) {
+                    if t_2._type == TokenType::OpenCurly {
+                        let scope = self.parse_scope(type_.clone());
+                        if let Some(scope) = scope {
+                            node = Some(NodeStmt::NodeStmtElse(NodeStmtElse {
+                                scope: Box::new(scope),
+                            }));
+                            
+                        }
+                        if let Some(t_3) = self.peek(0) {
+                            if t_3._type == TokenType::CloseCurly {
+                                self.consume(1);
+                                return node;
+                            } else {
+                                eprintln!("Error: Expected '}}' found {:?}", t_3);
+                                exit(-1);
+                            }
+                        } 
+                    }
+                } else {
+                    eprintln!("Error: Expected 'if'");
+                    exit(-1);
                 }
             }
 
@@ -732,6 +802,7 @@ impl Parser {
                                             expr: node_expr,
                                             scope: Box::new(scope),
                                         }));
+                                        return node;
                                     } else {
                                         eprintln!("Error: Expected scope");
                                         exit(-1);
@@ -860,11 +931,10 @@ impl Parser {
                     }
                     return node;
                 }
-                
+
                 if let Some(t_3) = self.peek(2) {
                     if let Some(t_4) = self.peek(3) {
                         if let Some(t_5) = self.peek(4) {
-                            
                             if t._type == TokenType::Let
                                 && t_2._type == TokenType::Ident
                                 && t_3._type == TokenType::Colon
@@ -929,7 +999,11 @@ impl Parser {
 
                         if let Some(expr) = self.parse_expr(0, var_type.1.clone()) {
                             if var_type.1 != expr.get_type() {
-                                eprintln!("Error: Type mismatch {:?} and {:?}", var_type.1, expr.get_type());
+                                eprintln!(
+                                    "Error: Type mismatch {:?} and {:?}",
+                                    var_type.1,
+                                    expr.get_type()
+                                );
                                 exit(-1);
                             }
                             node = Some(NodeStmt::NodeStmtAssign(NodeStmtAssign {
@@ -957,15 +1031,14 @@ impl Parser {
     }
 
     pub fn parse_prog(&mut self) -> Option<NodeProg> {
-        let mut prog = NodeProg { stmts: Vec::new() };
         while let Some(_t) = self.peek(0) {
             if let Some(stmt) = self.parse_stmt(Type::Int) {
-                prog.stmts.push(stmt);
+                self.prog.stmts.push(stmt);
             } else {
                 return None;
             }
         }
-        Some(prog)
+        Some(self.prog.clone())
     }
 
     fn peek(&self, ahead: usize) -> Option<Token> {

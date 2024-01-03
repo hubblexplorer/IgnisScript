@@ -21,6 +21,7 @@ pub struct Generator {
     m_stack_size: usize,
     m_vars: IndexMap<String, Var>,
     m_scopes: Vec<usize>,
+    statement_count: usize,
     label_count: usize,
 }
 
@@ -32,6 +33,7 @@ impl Generator {
             m_stack_size: 0,
             m_vars: IndexMap::new(),
             m_scopes: Vec::new(),
+            statement_count: 0,
             label_count: 0,
         }
     }
@@ -308,7 +310,7 @@ impl Generator {
                 self.gen_scope(stmt_scope);
             }
             NodeStmt::NodeStmtIf(stmt_if) => {
-                self.get_expr(&stmt_if.expr);
+                /*self.get_expr(&stmt_if.expr);
                 self.pop("rax");
                 let label = self.create_label();
                 self.m_output.push_str(format!("\tcmp rax, 0\n").as_str());
@@ -316,7 +318,75 @@ impl Generator {
                 let scope = stmt_if.scope.clone();
                 self.gen_scope(scope.as_ref());
 
-                self.m_output.push_str(format!("{}:\n", label).as_str());
+                self.m_output.push_str(format!("{}:\n", label).as_str());*/
+                //Check for else
+
+
+                let end_label = self.create_label();
+
+                self.get_expr(&stmt_if.expr);
+                self.pop("rax");
+  
+                self.m_output.push_str(format!("\tcmp rax, 0\n").as_str());
+                
+                
+                let stmts = self.m_prog.stmts.clone();
+                let mut last_scope = stmt_if.scope.clone();
+
+
+
+                loop {
+                    self.statement_count += 1;
+                    let next = &stmts[self.statement_count];
+                    match next {
+                    
+                        NodeStmt::NodeStmtElseIf(elseif) => {
+                            let new_label = self.create_label();
+                            self.m_output.push_str(format!("\tjz {}\n", new_label).as_str());
+                            self.gen_scope(last_scope.as_ref());
+                            self.m_output.push_str(format!("\tjmp {}\n",end_label).as_str());
+                            self.m_output.push_str(format!("{}:\n", new_label).as_str());
+                            self.get_expr(&elseif.expr);
+                            self.pop("rax");
+                            self.m_output.push_str(format!("\tcmp rax, 0\n").as_str());
+                            last_scope = elseif.scope.clone();
+                        }
+                        NodeStmt::NodeStmtElse(else_stmt) => {
+                            let new_label = self.create_label();
+                            self.m_output.push_str(format!("\tjz {}\n", new_label).as_str());
+                            self.gen_scope(last_scope.as_ref());
+                            self.m_output.push_str(format!("\tjmp {}\n",end_label).as_str());
+                            self.m_output.push_str(format!("{}:\n", new_label).as_str());
+                            self.gen_scope(&else_stmt.scope);
+                            self.m_output.push_str(format!("{}:\n", end_label).as_str());
+                            break;
+
+                            
+                        }
+                        _ => {
+                            self.statement_count -= 1;
+                            self.m_output.push_str(format!("\tjz {}\n", end_label).as_str());
+                            self.gen_scope(last_scope.as_ref());
+                            self.m_output.push_str(format!("{}:\n", end_label).as_str());
+                            break;
+                        }
+                    }
+                    
+                    
+                    
+                }
+                    
+                
+            }
+            NodeStmt::NodeStmtElseIf(_) =>{
+                eprintln!("This should not happen");
+                exit(-1);
+            }
+            NodeStmt::NodeStmtElse(_) =>{
+                eprintln!("This should not happen");
+                exit(-1);
+            
+                
             }
             NodeStmt::NodeStmtPrint(stmt_print) => {
 
@@ -438,11 +508,13 @@ impl Generator {
     pub fn gen_prog(&mut self) -> String {
         //Create a new objet fine to nasm
 
-        let aux = self.clone();
+        let aux = self.clone().m_prog.stmts;
 
-        for stmt in aux.m_prog.stmts.iter() {
-            self.get_stmt(stmt);
+        while self.statement_count < aux.len() {
+            self.get_stmt(&aux[self.statement_count]);
+            self.statement_count += 1;
         }
+
 
         //If no exit statement is found, add one with return 0
         self.m_output.push_str("\tmov rax, 60\n");

@@ -7,7 +7,7 @@ mod generation;
 
 fn main() {
     let input = env::args().nth(1);
-    let input = Some("tests/test.ignis".to_string());
+    let input = Some("tests/else.ignis");
     if input.is_none() {
         eprintln!("Error: Filename not provided: Usage \"IgnisScript <file>\"");
         exit(-1);
